@@ -1,0 +1,147 @@
+<%- include('partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-box-seam me-2"></i>Product Inventory
+    </h2>
+    <a href="/addProduct" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-2"></i>Add New Product
+    </a>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="/inventory" method="GET" class="row g-3 align-items-center">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" 
+                           class="form-control" 
+                           name="search" 
+                           placeholder="Search products by name..."
+                           value="<%= searchTerm %>">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-2"></i>Search
+                    </button>
+                    <% if (searchTerm) { %>
+                        <a href="/inventory" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i> Clear
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Low Stock Alert -->
+<% const lowStockItems = products.filter(p => p.isLowStock); %>
+<% if (lowStockItems.length > 0) { %>
+    <div class="alert alert-warning d-flex align-items-center mb-4">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-4"></i>
+        <div>
+            <strong>Low Stock Alert!</strong> 
+            <%= lowStockItems.length %> product(s) have stock at or below <%= lowStockThreshold %> units.
+        </div>
+    </div>
+<% } %>
+
+<!-- Products Table -->
+<% if (products.length === 0) { %>
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i>
+        <% if (searchTerm) { %>
+            No products found matching "<%= searchTerm %>"
+        <% } else { %>
+            No products in inventory. <a href="/addProduct" class="alert-link">Add your first product!</a>
+        <% } %>
+    </div>
+<% } else { %>
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th width="80">Image</th>
+                        <th>Product Name</th>
+                        <th width="120" class="text-center">Stock</th>
+                        <th width="100" class="text-end">Price</th>
+                        <th width="150" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% products.forEach(function(product) { %>
+                        <tr class="<%= product.isLowStock ? 'table-warning' : '' %>">
+                            <td>
+                                <img src="/images/<%= product.image %>" 
+                                     alt="<%= product.productName %>" 
+                                     class="img-thumbnail"
+                                     style="width: 60px; height: 60px; object-fit: cover;">
+                            </td>
+                            <td>
+                                <a href="/product/<%= product.id %>" class="text-decoration-none">
+                                    <strong><%= product.productName %></strong>
+                                </a>
+                            </td>
+                            <td class="text-center">
+                                <% if (product.isLowStock) { %>
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        <%= product.quantity %>
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-success">
+                                        <%= product.quantity %>
+                                    </span>
+                                <% } %>
+                            </td>
+                            <td class="text-end">
+                                <strong>$<%= product.price.toFixed(2) %></strong>
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="/updateProduct/<%= product.id %>" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Edit Product">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="/deleteProduct/<%= product.id %>" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="Delete Product"
+                                       onclick="return confirm('Are you sure you want to delete <%= product.productName %>? This action cannot be undone.')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted">
+            Showing <%= products.length %> product(s)
+            <% if (searchTerm) { %>
+                matching "<%= searchTerm %>"
+            <% } %>
+        </div>
+    </div>
+<% } %>
+
+<!-- Legend -->
+<div class="mt-4">
+    <small class="text-muted">
+        <span class="badge bg-warning text-dark me-2">
+            <i class="bi bi-exclamation-triangle"></i>
+        </span>
+        Low stock (≤ <%= lowStockThreshold %> units)
+    </small>
+</div>
+
+<%- include('partials/footer') %>

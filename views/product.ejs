@@ -1,0 +1,121 @@
+<%- include('partials/header') %>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/shopping">Shop</a></li>
+        <li class="breadcrumb-item active"><%= product.productName %></li>
+    </ol>
+</nav>
+
+<div class="row">
+    <!-- Product Image -->
+    <div class="col-md-5 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center p-4">
+                <img src="/images/<%= product.image %>" 
+                     alt="<%= product.productName %>" 
+                     class="img-fluid"
+                     style="max-height: 400px; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Product Details -->
+    <div class="col-md-7">
+        <h1 class="mb-3"><%= product.productName %></h1>
+        
+        <!-- Price -->
+        <p class="fs-2 fw-bold text-primary mb-3">
+            $<%= product.price.toFixed(2) %>
+        </p>
+        
+        <!-- Stock Status -->
+        <div class="mb-4">
+            <% if (product.quantity > 20) { %>
+                <span class="badge bg-success fs-6 px-3 py-2">
+                    <i class="bi bi-check-circle me-2"></i>In Stock (<%= product.quantity %> available)
+                </span>
+            <% } else if (product.quantity > 0) { %>
+                <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                    <i class="bi bi-exclamation-circle me-2"></i>Low Stock - Only <%= product.quantity %> left!
+                </span>
+            <% } else { %>
+                <span class="badge bg-danger fs-6 px-3 py-2">
+                    <i class="bi bi-x-circle me-2"></i>Out of Stock
+                </span>
+            <% } %>
+        </div>
+        
+        <!-- Add to Cart Form -->
+        <% if (product.quantity > 0) { %>
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form action="/add-to-cart/<%= product.id %>" method="POST">
+                        <div class="row align-items-center g-3">
+                            <div class="col-auto">
+                                <label for="quantity" class="col-form-label fw-bold">Quantity:</label>
+                            </div>
+                            <div class="col-auto">
+                                <select class="form-select" id="quantity" name="quantity" style="width: 100px;">
+                                    <% const maxQty = Math.min(product.quantity, 10); %>
+                                    <% for (let q = 1; q <= maxQty; q++) { %>
+                                        <option value="<%= q %>"><%= q %></option>
+                                    <% } %>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i class="bi bi-cart-plus me-2"></i>Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="alert alert-secondary mb-4">
+                <i class="bi bi-info-circle me-2"></i>
+                This product is currently out of stock. Please check back later.
+            </div>
+        <% } %>
+        
+        <!-- Product Info -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Product Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" width="150">Product ID:</td>
+                        <td><%= product.id %></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Name:</td>
+                        <td><%= product.productName %></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Price:</td>
+                        <td>$<%= product.price.toFixed(2) %></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Availability:</td>
+                        <td><%= product.quantity %> units in stock</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Back Button -->
+        <div class="mt-4">
+            <a href="/shopping" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Continue Shopping
+            </a>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

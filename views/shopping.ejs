@@ -1,0 +1,138 @@
+<%- include('partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-shop me-2"></i>Shop Products
+    </h2>
+    <a href="/cart" class="btn btn-outline-primary position-relative">
+        <i class="bi bi-cart3 me-2"></i>View Cart
+        <% if (cartCount > 0) { %>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                <%= cartCount %>
+            </span>
+        <% } %>
+    </a>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form action="/shopping" method="GET" class="row g-3 align-items-center">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" 
+                           class="form-control" 
+                           name="search" 
+                           placeholder="Search for products..."
+                           value="<%= searchTerm %>">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-2"></i>Search
+                    </button>
+                    <% if (searchTerm) { %>
+                        <a href="/shopping" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i> Clear
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Grid -->
+<% if (products.length === 0) { %>
+    <div class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i>
+        <% if (searchTerm) { %>
+            No products found matching "<%= searchTerm %>"
+        <% } else { %>
+            No products available at the moment. Please check back later!
+        <% } %>
+    </div>
+<% } else { %>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+        <% products.forEach(function(product) { %>
+            <div class="col">
+                <div class="card h-100 shadow-sm product-card">
+                    <!-- Product Image -->
+                    <a href="/product/<%= product.id %>">
+                        <img src="/images/<%= product.image %>" 
+                             class="card-img-top p-3" 
+                             alt="<%= product.productName %>"
+                             style="height: 180px; object-fit: contain;">
+                    </a>
+                    
+                    <div class="card-body d-flex flex-column">
+                        <!-- Product Name -->
+                        <h5 class="card-title">
+                            <a href="/product/<%= product.id %>" class="text-decoration-none text-dark">
+                                <%= product.productName %>
+                            </a>
+                        </h5>
+                        
+                        <!-- Price -->
+                        <p class="card-text fs-4 fw-bold text-primary mb-2">
+                            $<%= product.price.toFixed(2) %>
+                        </p>
+                        
+                        <!-- Stock Status -->
+                        <p class="card-text mb-3">
+                            <% if (product.quantity > 20) { %>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>In Stock
+                                </span>
+                            <% } else if (product.quantity > 0) { %>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-exclamation-circle me-1"></i>Only <%= product.quantity %> left
+                                </span>
+                            <% } else { %>
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle me-1"></i>Out of Stock
+                                </span>
+                            <% } %>
+                        </p>
+                        
+                        <!-- Add to Cart Form -->
+                        <% if (product.quantity > 0) { %>
+                            <form action="/add-to-cart/<%= product.id %>" method="POST" class="mt-auto">
+                                <div class="input-group mb-2">
+                                    <label class="input-group-text" for="qty-<%= product.id %>">Qty</label>
+                                    <select class="form-select" id="qty-<%= product.id %>" name="quantity">
+                                        <% const maxQty = Math.min(product.quantity, 10); %>
+                                        <% for (let q = 1; q <= maxQty; q++) { %>
+                                            <option value="<%= q %>"><%= q %></option>
+                                        <% } %>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-cart-plus me-2"></i>Add to Cart
+                                </button>
+                            </form>
+                        <% } else { %>
+                            <button class="btn btn-secondary w-100 mt-auto" disabled>
+                                <i class="bi bi-x-circle me-2"></i>Out of Stock
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+    
+    <!-- Product Count -->
+    <div class="text-muted mt-4">
+        Showing <%= products.length %> product(s)
+        <% if (searchTerm) { %>
+            matching "<%= searchTerm %>"
+        <% } %>
+    </div>
+<% } %>
+
+<%- include('partials/footer') %>

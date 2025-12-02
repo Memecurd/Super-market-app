@@ -1,0 +1,72 @@
+<%- include('partials/header') %>
+
+<!-- Home Page Hero Section -->
+<div class="px-4 py-5 my-5 text-center">
+    <i class="bi bi-basket3-fill display-1 text-primary mb-4"></i>
+    <h1 class="display-4 fw-bold text-body-emphasis">Welcome to JustFee</h1>
+    <div class="col-lg-6 mx-auto">
+        <p class="lead mb-4">
+            Your one-stop shop for fresh groceries and everyday essentials. 
+            Browse our wide selection of quality products at great prices.
+        </p>
+        
+        <% if (!user) { %>
+            <!-- Guest Actions -->
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a href="/login" class="btn btn-primary btn-lg px-4 gap-3">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                </a>
+                <a href="/register" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="bi bi-person-plus me-2"></i>Register
+                </a>
+            </div>
+        <% } else { %>
+            <!-- Logged In User Actions -->
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <% if (user.role === 'admin') { %>
+                    <a href="/inventory" class="btn btn-primary btn-lg px-4 gap-3">
+                        <i class="bi bi-box-seam me-2"></i>Manage Inventory
+                    </a>
+                <% } %>
+                <a href="/shopping" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="bi bi-shop me-2"></i>Start Shopping
+                </a>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="container py-5">
+    <div class="row g-4 py-3 row-cols-1 row-cols-lg-3">
+        <div class="col d-flex align-items-start">
+            <div class="icon-square text-body-emphasis bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3 rounded p-3">
+                <i class="bi bi-truck text-primary"></i>
+            </div>
+            <div>
+                <h3 class="fs-4 text-body-emphasis">Fast Delivery</h3>
+                <p class="text-muted">Get your groceries delivered fresh to your doorstep.</p>
+            </div>
+        </div>
+        <div class="col d-flex align-items-start">
+            <div class="icon-square text-body-emphasis bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3 rounded p-3">
+                <i class="bi bi-shield-check text-primary"></i>
+            </div>
+            <div>
+                <h3 class="fs-4 text-body-emphasis">Quality Products</h3>
+                <p class="text-muted">We source only the freshest and highest quality items.</p>
+            </div>
+        </div>
+        <div class="col d-flex align-items-start">
+            <div class="icon-square text-body-emphasis bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3 rounded p-3">
+                <i class="bi bi-piggy-bank text-primary"></i>
+            </div>
+            <div>
+                <h3 class="fs-4 text-body-emphasis">Best Prices</h3>
+                <p class="text-muted">Competitive prices on all your favorite products.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,127 @@
+<%- include('partials/header') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/inventory">Inventory</a></li>
+                <li class="breadcrumb-item active">Add Product</li>
+            </ol>
+        </nav>
+
+        <div class="card shadow">
+            <div class="card-header text-white py-3" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                <h4 class="mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Product
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form action="/addProduct" method="POST" enctype="multipart/form-data">
+                    <!-- Product Name -->
+                    <div class="mb-3">
+                        <label for="name" class="form-label">
+                            Product Name <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="name" 
+                               name="name" 
+                               value="<%= typeof formData !== 'undefined' && formData.name ? formData.name : '' %>"
+                               placeholder="Enter product name"
+                               required>
+                    </div>
+
+                    <div class="row">
+                        <!-- Quantity -->
+                        <div class="col-md-6 mb-3">
+                            <label for="quantity" class="form-label">
+                                Stock Quantity <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-box-seam"></i>
+                                </span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="quantity" 
+                                       name="quantity" 
+                                       value="<%= typeof formData !== 'undefined' && formData.quantity ? formData.quantity : '' %>"
+                                       placeholder="0"
+                                       min="0"
+                                       required>
+                            </div>
+                        </div>
+
+                        <!-- Price -->
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label">
+                                Price <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="price" 
+                                       name="price" 
+                                       value="<%= typeof formData !== 'undefined' && formData.price ? formData.price : '' %>"
+                                       placeholder="0.00"
+                                       step="0.01"
+                                       min="0"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Image -->
+                    <div class="mb-4">
+                        <label for="image" class="form-label">Product Image</label>
+                        <input type="file" 
+                               class="form-control" 
+                               id="image" 
+                               name="image"
+                               accept="image/*">
+                        <small class="text-muted">
+                            Accepted formats: JPG, PNG, GIF, WebP (Max 5MB)
+                        </small>
+                        
+                        <!-- Image Preview -->
+                        <div id="imagePreview" class="mt-3" style="display: none;">
+                            <p class="mb-2 text-muted">Preview:</p>
+                            <img id="preview" src="" alt="Preview" class="img-thumbnail" style="max-height: 200px;">
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-plus-circle me-2"></i>Add Product
+                        </button>
+                        <a href="/inventory" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Preview Script -->
+<script>
+    document.getElementById('image').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('preview').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            document.getElementById('imagePreview').style.display = 'none';
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

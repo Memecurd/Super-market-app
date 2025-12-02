@@ -1,0 +1,138 @@
+<%- include('partials/header') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header text-white text-center py-3" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">
+                <h4 class="mb-0">
+                    <i class="bi bi-person-plus me-2"></i>Create Account
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form action="/register" method="POST">
+                    <div class="row">
+                        <!-- Username -->
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="username" 
+                                       name="username" 
+                                       value="<%= typeof formData !== 'undefined' && formData.username ? formData.username : '' %>"
+                                       placeholder="Choose a username"
+                                       minlength="3"
+                                       maxlength="20"
+                                       required>
+                            </div>
+                            <small class="text-muted">3-20 characters</small>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="email" 
+                                       name="email" 
+                                       value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>"
+                                       placeholder="Enter your email"
+                                       required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-lock"></i>
+                            </span>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="Choose a password"
+                                   minlength="6"
+                                   required>
+                        </div>
+                        <small class="text-muted">Minimum 6 characters</small>
+                    </div>
+                    
+                    <!-- Address -->
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-house"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="address" 
+                                   name="address" 
+                                   value="<%= typeof formData !== 'undefined' && formData.address ? formData.address : '' %>"
+                                   placeholder="Enter your address"
+                                   required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Contact -->
+                        <div class="col-md-6 mb-3">
+                            <label for="contact" class="form-label">Contact Number <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-telephone"></i>
+                                </span>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="contact" 
+                                       name="contact" 
+                                       value="<%= typeof formData !== 'undefined' && formData.contact ? formData.contact : '' %>"
+                                       placeholder="8-10 digits"
+                                       pattern="[0-9]{8,10}"
+                                       required>
+                            </div>
+                        </div>
+                        
+                        <!-- Role -->
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Account Type</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="user" <%= typeof formData !== 'undefined' && formData.role === 'user' ? 'selected' : '' %>>
+                                    Regular User
+                                </option>
+                                <option value="admin" <%= typeof formData !== 'undefined' && formData.role === 'admin' ? 'selected' : '' %>>
+                                    Admin
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-person-plus me-2"></i>Create Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3">
+                <p class="mb-0">
+                    Already have an account? 
+                    <a href="/login" class="text-primary fw-bold">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
