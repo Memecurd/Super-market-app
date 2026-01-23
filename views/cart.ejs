@@ -256,11 +256,12 @@
                                 }
                             }).render('#paypal-button-container');
                         } else {
+                            const debugId = '<%= paypalClientId %>';
                             console.error('PayPal SDK not loaded');
                             document.getElementById('paypal-button-container').innerHTML =
                                 '<div class="alert alert-warning">' +
                                 '<i class="bi bi-exclamation-triangle me-2"></i>' +
-                                'PayPal could not be loaded. Please check your internet connection or Client ID.' +
+                                'PayPal could not be loaded.<br>Debug Info: Client ID is ' + (debugId ? 'PRESENT (' + debugId.substring(0, 5) + '...)' : 'MISSING') +
                                 '</div>';
                         }
 

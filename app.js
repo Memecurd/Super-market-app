@@ -6,6 +6,8 @@
  * All route handling is delegated to controllers via route files.
  */
 
+require('dotenv').config(); // Load environment variables
+
 const express = require('express');
 const session = require('express-session');
 const flash = require('connect-flash');

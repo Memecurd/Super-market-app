@@ -52,16 +52,23 @@ const paymentController = {
      * Create Order Intent
      */
     createPayPalOrder: async (req, res) => {
+        console.log('PayPal: createPayPalOrder initiated');
         try {
             const user = req.session.user;
-            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+            if (!user) {
+                console.log('PayPal: User not authorized');
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
 
             const cart = req.session.cart || [];
             if (cart.length === 0) {
+                console.log('PayPal: Cart is empty');
                 return res.status(400).json({ error: 'Cart is empty' });
             }
 
+            console.log('PayPal: Calculating server total from DB...');
             const total = await paymentController.calculateServerTotal(cart);
+            console.log(`PayPal: Total calculated: ${total}`);
 
             const request = new paypal.orders.OrdersCreateRequest();
             request.prefer("return=representation");
@@ -75,11 +82,14 @@ const paymentController = {
                 }]
             });
 
+            console.log('PayPal: Connecting to PayPal API...');
             const client = getPayPalClient();
             const order = await client.execute(request);
             const orderID = order.result.id;
+            console.log(`PayPal: Order created with ID: ${orderID}`);
 
             // Create Transaction Record (PENDING)
+            console.log('PayPal: Creating DB transaction...');
             await Transaction.create({
                 txn_ref: orderID, // For PayPal, we use OrderID as our reference initially
                 provider_ref: orderID,
@@ -88,6 +98,7 @@ const paymentController = {
                 amount: total,
                 status: 'PENDING'
             });
+            console.log('PayPal: Transaction saved to DB');
 
             res.json({ id: orderID });
 
