@@ -188,11 +188,9 @@
                                                     id="netsAmount">0.00</span></strong></small>
                                     </div>
 
-                                    <!-- DEV ONLY: Simulate Success -->
-                                    <div class="d-grid gap-2 mb-3">
-                                        <button class="btn btn-sm btn-outline-success" id="btnSimulateSuccess">
-                                            <i class="bi bi-magic me-2"></i>Simulate Payment (Dev Only)
-                                        </button>
+                                    <div class="alert alert-info py-2">
+                                        <small>Amount to Pay: <strong>$<span
+                                                    id="netsAmount">0.00</span></strong></small>
                                     </div>
 
                                     <p class="text-muted small">
@@ -210,180 +208,175 @@
                     </div>
                 </div>
 
-                <% if (cart.length> 0) { %>
-                    <!-- PayPal SDK -->
-                    <script src="https://www.paypal.com/sdk/js?client-id=<%= paypalClientId %>&currency=SGD"></script>
+                <%- include('partials/footer') %>
 
-                    <!-- Payment Scripts -->
-                    <script>
-                        // ===================================
-                        // PAYPAL INTEGRATION
-                        // ===================================
-                        if (typeof paypal !== 'undefined') {
-                            paypal.Buttons({
-                                style: {
-                                    layout: 'vertical',
-                                    color: 'gold',
-                                    shape: 'rect',
-                                    label: 'paypal'
-                                },
+                    <% if (cart.length> 0) { %>
+                        <!-- PayPal SDK -->
+                        <script
+                            src="https://www.paypal.com/sdk/js?client-id=<%= paypalClientId %>&currency=SGD"></script>
 
-                                // Call your server to set up the transaction
-                                createOrder: function (data, actions) {
-                                    return fetch('/api/paypal/create-order', {
-                                        method: 'post'
-                                    }).then(function (res) {
-                                        return res.json();
-                                    }).then(function (orderData) {
-                                        return orderData.id;
-                                    });
-                                },
+                        <!-- Payment Scripts -->
+                        <script>
+                            // ===================================
+                            // PAYPAL INTEGRATION
+                            // ===================================
+                            if (typeof paypal !== 'undefined') {
+                                paypal.Buttons({
+                                    style: {
+                                        layout: 'vertical',
+                                        color: 'gold',
+                                        shape: 'rect',
+                                        label: 'paypal'
+                                    },
 
-                                // Call your server to finalize the transaction
-                                onApprove: function (data, actions) {
-                                    return fetch('/api/paypal/capture-order', {
-                                        method: 'post',
-                                        headers: {
-                                            'content-type': 'application/json'
-                                        },
-                                        body: JSON.stringify({
-                                            orderID: data.orderID
-                                        })
-                                    }).then(function (res) {
-                                        return res.json();
-                                    }).then(function (orderData) {
-                                        // Check for error detail
-                                        if (orderData.error) {
-                                            alert('Payment failed: ' + orderData.error);
-                                            window.location.href = '/payment/fail';
-                                        } else if (orderData.status === 'COMPLETED') {
-                                            // Redirect to success page
-                                            window.location.href = '/payment/success';
-                                        }
-                                    });
-                                },
+                                    // Call your server to set up the transaction
+                                    createOrder: function (data, actions) {
+                                        return fetch('/api/paypal/create-order', {
+                                            method: 'post'
+                                        }).then(function (res) {
+                                            return res.json();
+                                        }).then(function (orderData) {
+                                            return orderData.id;
+                                        });
+                                    },
 
-                                onCancel: function (data) {
-                                    window.location.href = '/payment/fail?reason=cancelled';
-                                }
-                            }).render('#paypal-button-container');
-                        } else {
-                            const debugId = '<%= paypalClientId %>';
-                            console.error('PayPal SDK not loaded');
-                            document.getElementById('paypal-button-container').innerHTML =
-                                '<div class="alert alert-warning">' +
-                                '<i class="bi bi-exclamation-triangle me-2"></i>' +
-                                'PayPal could not be loaded.<br>Debug Info: Client ID is ' + (debugId ? 'PRESENT (' + debugId.substring(0, 5) + '...)' : 'MISSING') +
-                                '</div>';
-                        }
+                                    // Call your server to finalize the transaction
+                                    onApprove: function (data, actions) {
+                                        return fetch('/api/paypal/capture-order', {
+                                            method: 'post',
+                                            headers: {
+                                                'content-type': 'application/json'
+                                            },
+                                            body: JSON.stringify({
+                                                orderID: data.orderID
+                                            })
+                                        }).then(function (res) {
+                                            return res.json();
+                                        }).then(function (orderData) {
+                                            // Check for error detail
+                                            if (orderData.error) {
+                                                alert('Payment failed: ' + orderData.error);
+                                                window.location.href = '/payment/fail';
+                                            } else if (orderData.status === 'COMPLETED') {
+                                                // Redirect to success page
+                                                window.location.href = '/payment/success';
+                                            }
+                                        });
+                                    },
 
-                        // ===================================
-                        // NETS QR INTEGRATION
-                        // ===================================
-                        const btnNetsPay = document.getElementById('btnNetsPay');
-                        const netsModal = new bootstrap.Modal(document.getElementById('netsQrModal'));
-                        const netsQrLoader = document.getElementById('netsQrLoader');
-                        const netsQrContent = document.getElementById('netsQrContent');
-                        const netsQrImage = document.getElementById('netsQrImage');
-                        const netsAmount = document.getElementById('netsAmount');
-                        const netsQrError = document.getElementById('netsQrError');
-                        const btnSimulateSuccess = document.getElementById('btnSimulateSuccess'); // New Button
-
-                        let eventSource = null;
-                        let currentTxnRef = null;
-
-                        btnNetsPay.addEventListener('click', async () => {
-                            // Reset state
-                            netsQrLoader.classList.remove('d-none');
-                            netsQrContent.classList.add('d-none');
-                            netsQrError.classList.add('d-none');
-                            netsModal.show();
-
-                            try {
-                                // 1. Request QR Code
-                                const response = await fetch('/api/nets/qr', { method: 'POST' });
-                                const data = await response.json();
-
-                                if (data.error) throw new Error(data.error);
-
-                                // 2. Display QR
-                                netsQrImage.src = data.qrImage;
-                                netsAmount.textContent = data.amount.toFixed(2);
-                                currentTxnRef = data.txnRef; // Store Ref
-
-                                netsQrLoader.classList.add('d-none');
-                                netsQrContent.classList.remove('d-none');
-
-                                // 3. Start Polling (SSE)
-                                startNetsPolling(currentTxnRef);
-
-                            } catch (error) {
-                                console.error(error);
-                                netsQrLoader.classList.add('d-none');
-                                netsQrError.classList.remove('d-none');
+                                    onCancel: function (data) {
+                                        window.location.href = '/payment/fail?reason=cancelled';
+                                    }
+                                }).render('#paypal-button-container');
+                            } else {
+                                const debugId = '<%= paypalClientId %>';
+                                console.error('PayPal SDK not loaded');
+                                document.getElementById('paypal-button-container').innerHTML =
+                                    '<div class="alert alert-warning">' +
+                                    '<i class="bi bi-exclamation-triangle me-2"></i>' +
+                                    'PayPal could not be loaded.<br>Debug Info: Client ID is ' + (debugId ? 'PRESENT (' + debugId.substring(0, 5) + '...)' : 'MISSING') +
+                                    '</div>';
                             }
-                        });
 
-                        // Simulation Click Handler
-                        btnSimulateSuccess.addEventListener('click', async () => {
-                            if (!currentTxnRef) return;
+                            // ===================================
+                            // NETS QR INTEGRATION
+                            // ===================================
+                            const btnNetsPay = document.getElementById('btnNetsPay');
+                            // Wait for DOM to be ready just in case, but footer placement should solve it
+                            // Moved declaration inside click to be safe or ensure bootstrap is loaded
+                            // We will use new bootstrap.Modal inside the event listener or ensure this script runs after bootstrap
 
-                            btnSimulateSuccess.disabled = true;
-                            btnSimulateSuccess.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
-
+                            let netsModal;
+                            // Initialize Modal safely
                             try {
-                                await fetch('/api/nets/simulate', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ txnRef: currentTxnRef })
-                                });
-                                // No need to navigate here, the SSE will pick up the status change to 'PAID' 
-                                // and redirect us automatically.
+                                netsModal = new bootstrap.Modal(document.getElementById('netsQrModal'));
                             } catch (e) {
-                                console.error('Simulation failed', e);
-                                alert('Simulation failed');
-                                btnSimulateSuccess.disabled = false;
-                                btnSimulateSuccess.innerText = 'Simulate Payment (Dev Only)';
+                                console.error('Bootstrap not loaded?', e);
                             }
-                        });
 
-                        function startNetsPolling(txnRef) {
-                            if (eventSource) eventSource.close();
+                            const netsQrLoader = document.getElementById('netsQrLoader');
+                            const netsQrContent = document.getElementById('netsQrContent');
+                            const netsQrImage = document.getElementById('netsQrImage');
+                            const netsAmount = document.getElementById('netsAmount');
+                            const netsQrError = document.getElementById('netsQrError');
 
-                            eventSource = new EventSource(`/sse/payment-status/${txnRef}`);
+                            let eventSource = null;
+                            let currentTxnRef = null;
 
-                            eventSource.onmessage = (event) => {
-                                const data = JSON.parse(event.data);
-                                console.log('Payment Status:', data.status);
+                            btnNetsPay.addEventListener('click', async () => {
+                                // Reset state
+                                netsQrLoader.classList.remove('d-none');
+                                netsQrContent.classList.add('d-none');
+                                netsQrError.classList.add('d-none');
 
-                                if (data.status === 'SUCCESS') {
-                                    eventSource.close();
-                                    window.location.href = '/payment/success';
-                                } else if (data.status === 'FAILED') {
-                                    eventSource.close();
-                                    window.location.href = '/payment/fail';
-                                } else if (data.status === 'TIMEOUT') {
-                                    eventSource.close();
-                                    alert('Payment timed out. Please try again.');
-                                    netsModal.hide();
+                                if (netsModal) netsModal.show();
+
+                                try {
+
+                                    // 1. Request QR Code
+                                    const response = await fetch('/api/nets/qr', { method: 'POST' });
+
+                                    const data = await response.json();
+
+
+                                    if (data.error) throw new Error(data.error);
+
+                                    // 2. Display QR
+                                    netsQrImage.src = data.qrImage;
+                                    netsAmount.textContent = data.amount.toFixed(2);
+                                    currentTxnRef = data.txnRef; // Store Ref
+
+                                    netsQrLoader.classList.add('d-none');
+                                    netsQrContent.classList.remove('d-none');
+
+                                    // 3. Start Polling (SSE)
+
+                                    startNetsPolling(currentTxnRef);
+
+                                } catch (error) {
+                                    console.error('NETS Frontend Error:', error);
+                                    netsQrLoader.classList.add('d-none');
+                                    netsQrError.classList.remove('d-none');
+                                    netsQrError.innerText = 'Error: ' + error.message;
                                 }
-                            };
+                            });
 
-                            eventSource.onerror = () => {
-                                console.error('SSE Error, closing connection');
-                                eventSource.close();
-                            };
-                        }
 
-                        // Stop polling when modal is closed
-                        document.getElementById('netsQrModal').addEventListener('hidden.bs.modal', () => {
-                            if (eventSource) {
-                                eventSource.close();
-                                eventSource = null;
+                            function startNetsPolling(txnRef) {
+                                if (eventSource) eventSource.close();
+
+                                eventSource = new EventSource(`/sse/payment-status/${txnRef}`);
+
+                                eventSource.onmessage = (event) => {
+                                    const data = JSON.parse(event.data);
+
+
+                                    if (data.status === 'SUCCESS') {
+                                        eventSource.close();
+                                        window.location.href = '/payment/success';
+                                    } else if (data.status === 'FAILED') {
+                                        eventSource.close();
+                                        window.location.href = '/payment/fail';
+                                    } else if (data.status === 'TIMEOUT') {
+                                        eventSource.close();
+                                        alert('Payment timed out. Please try again.');
+                                        if (netsModal) netsModal.hide();
+                                    }
+                                };
+
+                                eventSource.onerror = () => {
+                                    console.error('SSE Error, closing connection');
+                                    eventSource.close();
+                                };
                             }
-                        });
 
-                    </script>
-                    <% } %>
+                            // Stop polling when modal is closed
+                            document.getElementById('netsQrModal').addEventListener('hidden.bs.modal', () => {
+                                if (eventSource) {
+                                    eventSource.close();
+                                    eventSource = null;
+                                }
+                            });
 
-                        <%- include('partials/footer') %>
+                        </script>
+                        <% } %>

@@ -17,7 +17,7 @@ router.post('/api/paypal/capture-order', checkAuthenticated, paymentController.c
 // NETS QR ENDPOINTS
 // ===========================================
 router.post('/api/nets/qr', checkAuthenticated, paymentController.generateNetsQr);
-router.post('/api/nets/simulate', checkAuthenticated, paymentController.simulateNetsSuccess);
+
 router.get('/sse/payment-status/:txnRef', paymentController.paymentStatusSSE);
 
 // ===========================================
