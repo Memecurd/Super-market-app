@@ -158,7 +158,7 @@ const productController = {
         try {
             const productId = parseInt(req.params.id);
             const { name, quantity, price, currentImage } = req.body;
-            
+
             // Use new image if uploaded, otherwise keep current
             const image = req.file ? req.file.filename : currentImage;
 
@@ -185,7 +185,7 @@ const productController = {
         try {
             const productId = parseInt(req.params.id);
             const product = await Product.getById(productId);
-            
+
             if (!product) {
                 req.flash('error', 'Product not found');
                 return res.redirect('/inventory');
@@ -274,7 +274,7 @@ const productController = {
 
             // Fetch product from database
             const product = await Product.getById(productId);
-            
+
             if (!product) {
                 req.flash('error', 'Product not found');
                 return res.redirect('/shopping');
@@ -331,10 +331,10 @@ const productController = {
     getCart: async (req, res) => {
         try {
             const cart = req.session.cart || [];
-            
+
             // Calculate total
             const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            
+
             // Update maxStock for each item (in case stock changed)
             for (let item of cart) {
                 const product = await Product.getById(item.productId);
@@ -343,10 +343,12 @@ const productController = {
                 }
             }
 
+            console.log('Rendering Cart with PayPal Client ID:', process.env.PAYPAL_CLIENT_ID ? 'LOADED' : 'MISSING');
             res.render('cart', {
                 title: 'Shopping Cart',
                 cart,
-                total
+                total,
+                paypalClientId: process.env.PAYPAL_CLIENT_ID
             });
         } catch (error) {
             console.error('Error loading cart:', error);
@@ -369,7 +371,7 @@ const productController = {
             }
 
             const cartItem = req.session.cart.find(item => item.productId === productId);
-            
+
             if (!cartItem) {
                 req.flash('error', 'Item not found in cart');
                 return res.redirect('/cart');
@@ -412,7 +414,7 @@ const productController = {
             }
 
             const cartItem = req.session.cart.find(item => item.productId === productId);
-            
+
             if (cartItem) {
                 req.session.cart = req.session.cart.filter(item => item.productId !== productId);
                 req.flash('success', `"${cartItem.productName}" removed from cart`);
@@ -426,6 +428,36 @@ const productController = {
             req.flash('error', 'Failed to remove item from cart');
             res.redirect('/cart');
         }
+    },
+
+    /**
+     * Helper: Finalize Order
+     * Updates inventory, clears cart, and handles post-order logic.
+     * @param {Object} req - Express request object (to access session)
+     * @param {Array} cart - Cart items
+     * @param {number} transactionId - Internal Transaction ID (Optional)
+     * @returns {Object} Order summary
+     */
+    finalizeOrder: async (req, cart, transactionId = null) => {
+        // Update stock for each product
+        for (const item of cart) {
+            await Product.updateQuantity(item.productId, item.quantity);
+        }
+
+        // Calculate order total
+        const orderTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const orderItems = [...cart]; // Copy cart items
+
+        // Link transaction to order (if we had an Orders table, we'd insert here)
+        // For now, we assume the Transaction table acts as the order record
+        if (transactionId) {
+            console.log(`Order finalized for Transaction ID: ${transactionId}`);
+        }
+
+        // Clear cart
+        req.session.cart = [];
+
+        return { orderItems, orderTotal };
     },
 
     /**
@@ -457,17 +489,8 @@ const productController = {
                 return res.redirect('/cart');
             }
 
-            // Update stock for each product
-            for (const item of cart) {
-                await Product.updateQuantity(item.productId, item.quantity);
-            }
-
-            // Calculate order total
-            const orderTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const orderItems = [...cart]; // Copy cart items for confirmation page
-
-            // Clear cart
-            req.session.cart = [];
+            // Finalize order
+            const { orderItems, orderTotal } = await productController.finalizeOrder(req, cart);
 
             // Render checkout confirmation
             res.render('checkout', {

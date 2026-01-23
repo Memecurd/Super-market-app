@@ -43,7 +43,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'supermarket-secret-key-change-in-production',
     resave: false,
     saveUninitialized: false,
-    cookie: { 
+    cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
         secure: false // Set to true in production with HTTPS
     }
@@ -75,6 +75,10 @@ app.use('/', userRoutes);
 // Product routes (inventory, shopping, cart, etc.)
 app.use('/', productRoutes);
 
+// Payment routes
+const paymentRoutes = require('./routes/paymentRoutes');
+app.use('/', paymentRoutes);
+
 // ===========================================
 // 404 HANDLER
 // ===========================================
@@ -87,7 +91,7 @@ app.use((req, res) => {
 // ===========================================
 app.use((err, req, res, next) => {
     console.error('Error:', err.stack);
-    res.status(500).render('error', { 
+    res.status(500).render('error', {
         title: 'Error',
         message: 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err : {}

@@ -1,0 +1,25 @@
+<%- include('../partials/header') %>
+
+    <div class="container py-5 text-center">
+        <div class="card shadow-sm mx-auto border-danger" style="max-width: 500px;">
+            <div class="card-body py-5">
+                <div class="mb-4 text-danger">
+                    <i class="bi bi-x-circle-fill display-1"></i>
+                </div>
+                <h2 class="mb-3">Payment Failed</h2>
+                <p class="text-muted mb-4">
+                    We couldn't process your payment. Please try again or use a different payment method.
+                </p>
+                <div class="d-grid gap-2 col-8 mx-auto">
+                    <a href="/cart" class="btn btn-primary">
+                        Return to Cart
+                    </a>
+                    <a href="/shopping" class="btn btn-outline-secondary">
+                        Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/footer') %>
