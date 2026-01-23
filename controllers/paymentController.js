@@ -193,13 +193,50 @@ const paymentController = {
 
             res.json({
                 qrImage: qrDataUrl,
-                txnRef: txnRef,
                 amount: total
             });
 
         } catch (error) {
             console.error('NETS QR Gen Error:', error);
             res.status(500).json({ error: 'Failed to generate NETS QR' });
+        }
+    },
+
+    /**
+     * POST /api/nets/simulate
+     * Simulate Successful Payment (Sandbox Dev Helper)
+     */
+    simulateNetsSuccess: async (req, res) => {
+        try {
+            const { txnRef } = req.body;
+            const user = req.session.user;
+
+            console.log(`NETS Simulation: Simulating success for ${txnRef}`);
+
+            const transaction = await Transaction.findByRef(txnRef);
+            if (!transaction) return res.status(404).json({ error: 'Transaction not found' });
+
+            // Security: Ensure ownership
+            if (transaction.user_id !== user.id) return res.status(403).json({ error: 'Unauthorized' });
+
+            if (transaction.status === 'PAID') return res.json({ status: 'ALREADY_PAID' });
+
+            // Force Update Status
+            await Transaction.updateStatus(txnRef, 'PAID');
+            console.log('NETS Simulation: Transaction marked PAID');
+
+            // Force Finalize Order
+            const cart = req.session.cart || [];
+            if (cart.length > 0) {
+                await productController.finalizeOrder(req, cart, transaction.id);
+                console.log('NETS Simulation: Order finalized');
+            }
+
+            res.json({ success: true, message: 'Payment Simulated Successfully' });
+
+        } catch (error) {
+            console.error('NETS Simulation Error:', error);
+            res.status(500).json({ error: 'Simulation failed' });
         }
     },
 

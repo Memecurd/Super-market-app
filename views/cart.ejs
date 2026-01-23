@@ -187,6 +187,14 @@
                                         <small>Amount to Pay: <strong>$<span
                                                     id="netsAmount">0.00</span></strong></small>
                                     </div>
+
+                                    <!-- DEV ONLY: Simulate Success -->
+                                    <div class="d-grid gap-2 mb-3">
+                                        <button class="btn btn-sm btn-outline-success" id="btnSimulateSuccess">
+                                            <i class="bi bi-magic me-2"></i>Simulate Payment (Dev Only)
+                                        </button>
+                                    </div>
+
                                     <p class="text-muted small">
                                         <span class="spinner-grow spinner-grow-sm text-danger me-1"></span>
                                         Waiting for payment...
@@ -253,6 +261,10 @@
                                             window.location.href = '/payment/success';
                                         }
                                     });
+                                },
+
+                                onCancel: function (data) {
+                                    window.location.href = '/payment/fail?reason=cancelled';
                                 }
                             }).render('#paypal-button-container');
                         } else {
@@ -275,8 +287,10 @@
                         const netsQrImage = document.getElementById('netsQrImage');
                         const netsAmount = document.getElementById('netsAmount');
                         const netsQrError = document.getElementById('netsQrError');
+                        const btnSimulateSuccess = document.getElementById('btnSimulateSuccess'); // New Button
 
                         let eventSource = null;
+                        let currentTxnRef = null;
 
                         btnNetsPay.addEventListener('click', async () => {
                             // Reset state
@@ -295,17 +309,41 @@
                                 // 2. Display QR
                                 netsQrImage.src = data.qrImage;
                                 netsAmount.textContent = data.amount.toFixed(2);
+                                currentTxnRef = data.txnRef; // Store Ref
 
                                 netsQrLoader.classList.add('d-none');
                                 netsQrContent.classList.remove('d-none');
 
                                 // 3. Start Polling (SSE)
-                                startNetsPolling(data.txnRef);
+                                startNetsPolling(currentTxnRef);
 
                             } catch (error) {
                                 console.error(error);
                                 netsQrLoader.classList.add('d-none');
                                 netsQrError.classList.remove('d-none');
+                            }
+                        });
+
+                        // Simulation Click Handler
+                        btnSimulateSuccess.addEventListener('click', async () => {
+                            if (!currentTxnRef) return;
+
+                            btnSimulateSuccess.disabled = true;
+                            btnSimulateSuccess.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+
+                            try {
+                                await fetch('/api/nets/simulate', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ txnRef: currentTxnRef })
+                                });
+                                // No need to navigate here, the SSE will pick up the status change to 'PAID' 
+                                // and redirect us automatically.
+                            } catch (e) {
+                                console.error('Simulation failed', e);
+                                alert('Simulation failed');
+                                btnSimulateSuccess.disabled = false;
+                                btnSimulateSuccess.innerText = 'Simulate Payment (Dev Only)';
                             }
                         });
 
