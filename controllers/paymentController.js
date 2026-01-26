@@ -178,14 +178,25 @@ const paymentController = {
             // 1. Calculate Server Total
             const total = await paymentController.calculateServerTotal(cart);
 
+            console.log('NETS: Generating QR for Amount:', total);
+            
+            // Clean the NETS_TXN_ID (remove potential whitespace)
+            const netsTxnId = process.env.NETS_TXN_ID ? process.env.NETS_TXN_ID.trim() : '';
+            console.log(`NETS: Using Terminal ID (txn_id): '${netsTxnId}' (Length: ${netsTxnId.length})`);
+
             // 2. Call NETS Request API
             const url = `${process.env.NETS_BASE_URL}/api/v1/common/payments/nets-qr/request`;
 
+            // Ensure amount is formatted strictly as string with 2 decimal places (e.g., "10.00")
+            const formattedTotal = total.toFixed(2);
+
             const payload = {
-                txn_id: process.env.NETS_TXN_ID, // Terminal ID / Station ID
-                amt_in_dollars: total,
-                notify_mobile: 0
+                txn_id: netsTxnId, // Terminal ID / Station ID
+                amt_in_dollars: formattedTotal
             };
+
+            // Log the full payload for debugging
+            console.log('NETS Request Payload:', JSON.stringify(payload, null, 2));
 
             const headers = {
                 'Content-Type': 'application/json',
