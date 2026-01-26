@@ -1,0 +1,62 @@
+<%- include('partials/header') %>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0 fw-bold text-primary">
+            <i class="bi bi-clock-history me-2"></i>My Orders
+        </h2>
+        <a href="/shopping" class="btn btn-outline-primary">
+            <i class="bi bi-shop me-2"></i>Continue Shopping
+        </a>
+    </div>
+
+    <% if (orders.length === 0) { %>
+        <div class="text-center py-5">
+            <div class="mb-4 text-muted">
+                <i class="bi bi-cart-x display-1"></i>
+            </div>
+            <h3>No orders yet</h3>
+            <p class="text-muted">Once you make a purchase, it will appear here.</p>
+            <a href="/shopping" class="btn btn-primary mt-3">Start Shopping</a>
+        </div>
+    <% } else { %>
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order Ref</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td class="fw-bold text-primary">#<%= order.txn_ref %></td>
+                                <td><%= new Date(order.created_at).toLocaleString('en-SG', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
+                                <td class="fw-bold">$<%= parseFloat(order.amount).toFixed(2) %></td>
+                                <td>
+                                    <span class="badge bg-success"><%= order.status %></span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary"><%= order.provider %></span>
+                                </td>
+                                <td class="text-end">
+                                    <a href="/orders/invoice/<%= order.id %>" class="btn btn-sm btn-outline-dark" target="_blank">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i>Invoice
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>

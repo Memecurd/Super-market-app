@@ -96,6 +96,72 @@ const Transaction = {
             console.error('Error in Transaction.setProviderRef:', error);
             throw error;
         }
+    },
+
+    /**
+     * Save order items for a transaction
+     */
+    async saveOrderItems(transactionId, cartItems) {
+        try {
+            if (!cartItems || cartItems.length === 0) return;
+            
+            const values = cartItems.map(item => [
+                transactionId, 
+                item.productId, 
+                item.productName, 
+                item.price, 
+                item.quantity
+            ]);
+
+            // Bulk insert requires the values to be nested in another array [ values ]
+            await promisePool.query(
+                'INSERT INTO order_items (transaction_id, product_id, product_name, price, quantity) VALUES ?',
+                [values]
+            );
+        } catch (error) {
+           console.error('Error in Transaction.saveOrderItems:', error);
+           throw error; 
+        }
+    },
+
+    /**
+     * Get all paid transactions for a user
+     */
+    async getByUserId(userId) {
+        try {
+             const [rows] = await promisePool.query(
+                 'SELECT * FROM transactions WHERE user_id = ? AND status = "PAID" ORDER BY created_at DESC',
+                 [userId]
+             );
+             return rows;
+        } catch (error) {
+            console.error('Error in Transaction.getByUserId:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get full transaction details with items
+     */
+    async getByIdWithItems(id) {
+        try {
+             const [txn] = await promisePool.query('SELECT * FROM transactions WHERE id = ?', [id]);
+             if (txn.length === 0) return null;
+             
+             const transaction = txn[0];
+             
+             const [items] = await promisePool.query('SELECT * FROM order_items WHERE transaction_id = ?', [id]);
+             transaction.items = items;
+             
+             // Get user details (alias username as name for invoice compatibility)
+             const [user] = await promisePool.query('SELECT username AS name, email FROM users WHERE id = ?', [transaction.user_id]);
+             if (user.length > 0) transaction.user = user[0];
+             
+             return transaction;
+        } catch (error) {
+             console.error('Error in Transaction.getByIdWithItems:', error);
+             throw error;
+        }
     }
 };
 

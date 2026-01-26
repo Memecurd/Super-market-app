@@ -117,4 +117,10 @@ router.post('/cart/checkout',
     productController.checkout
 );
 
+// ===========================================
+// ORDER MANAGEMENT ROUTES
+// ===========================================
+router.get('/orders', checkAuthenticated, productController.getOrders);
+router.get('/orders/invoice/:id', checkAuthenticated, productController.getInvoice);
+
 module.exports = router;

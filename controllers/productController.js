@@ -9,6 +9,7 @@
  */
 
 const Product = require('../models/Product');
+const Transaction = require('../models/Transaction');
 const multer = require('multer');
 const path = require('path');
 
@@ -444,6 +445,11 @@ const productController = {
             await Product.updateQuantity(item.productId, item.quantity);
         }
 
+        // Save Order Items (if transaction exists)
+        if (transactionId) {
+            await Transaction.saveOrderItems(transactionId, cart);
+        }
+
         // Calculate order total
         const orderTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
         const orderItems = [...cart]; // Copy cart items
@@ -510,6 +516,61 @@ const productController = {
             console.error('Checkout error:', error);
             req.flash('error', 'Checkout failed. Please try again.');
             res.redirect('/cart');
+        }
+    },
+
+    /**
+     * GET /orders - View user's order history
+     */
+    getOrders: async (req, res) => {
+        try {
+            const user = req.session.user;
+            if (!user) return res.redirect('/login');
+
+            const orders = await Transaction.getByUserId(user.id);
+            res.render('orders', {
+                title: 'My Orders',
+                orders,
+                user
+            });
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+            req.flash('error', 'Failed to load orders');
+            res.redirect('/');
+        }
+    },
+
+    /**
+     * GET /orders/invoice/:id - View/Download Invoice
+     */
+    getInvoice: async (req, res) => {
+        try {
+            const user = req.session.user;
+            if (!user) return res.redirect('/login');
+
+            const transactionId = req.params.id;
+            const order = await Transaction.getByIdWithItems(transactionId);
+
+            if (!order) {
+                req.flash('error', 'Order not found');
+                return res.redirect('/orders');
+            }
+
+            // Ensure order belongs to user
+            if (order.user_id !== user.id) {
+                req.flash('error', 'Unauthorized');
+                return res.redirect('/orders');
+            }
+
+            res.render('invoice', {
+                title: `Invoice #${order.txn_ref}`,
+                order,
+                user
+            });
+        } catch (error) {
+            console.error('Error fetching invoice:', error);
+            req.flash('error', 'Failed to load invoice');
+            res.redirect('/orders');
         }
     }
 };

@@ -8,6 +8,7 @@ async function updateTransactionsTable() {
         // User asked to "Add" fields. Let's try to Drop and Recreate to guarantee correct order/enums.
 
         console.log('⚠ Dropping old transactions table to apply new schema...');
+        await promisePool.query('DROP TABLE IF EXISTS order_items'); // Drop child first
         await promisePool.query('DROP TABLE IF EXISTS transactions');
 
         const createTableQuery = `
@@ -36,9 +37,26 @@ async function updateTransactionsTable() {
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
-
+        
         await promisePool.query(createTransactionQuery);
-        console.log('✅ Transactions table recreated with new schema.');
+
+        console.log('⚠ Creating order_items table...');
+        
+        const createOrderItemsQuery = `
+            CREATE TABLE IF NOT EXISTS order_items (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                transaction_id INT NOT NULL,
+                product_id INT,
+                product_name VARCHAR(255),
+                price DECIMAL(10, 2),
+                quantity INT,
+                FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        `;
+
+        await promisePool.query(createOrderItemsQuery);
+        console.log('✅ Order Items table created.');
+
 
     } catch (error) {
         console.error('❌ Error updating transactions table:', error);

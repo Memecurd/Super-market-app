@@ -53,6 +53,11 @@
                                 <i class="bi bi-shop me-1"></i>Shop
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/orders">
+                                <i class="bi bi-receipt me-1"></i>Orders
+                            </a>
+                        </li>
                     <% } %>
                 </ul>
                 
@@ -79,6 +84,11 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><span class="dropdown-item-text text-muted small">Logged in as <%= user.email %></span></li>
+                                <li>
+                                    <a class="dropdown-item" href="/orders">
+                                        <i class="bi bi-receipt me-1"></i>My Orders
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="/logout">
