@@ -589,9 +589,9 @@ const productController = {
                 return res.redirect('/orders');
             }
 
-            // Ensure order belongs to user
-            if (order.user_id !== user.id) {
-                req.flash('error', 'Unauthorized');
+            // Ensure order belongs to user or user is admin
+            if (order.user_id !== user.id && user.role !== 'admin') {
+                req.flash('error', 'Unauthorized access to invoice');
                 return res.redirect('/orders');
             }
 
