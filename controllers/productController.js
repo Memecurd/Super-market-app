@@ -93,6 +93,39 @@ const productController = {
     },
 
     /**
+     * GET /admin/orders - Display all orders (Admin)
+     */
+    getAdminOrders: async (req, res) => {
+        try {
+            const orders = await Transaction.getAllWithUsers();
+            res.render('adminOrders', {
+                title: 'Manage Orders',
+                orders
+            });
+        } catch (error) {
+            console.error('Error fetching admin orders:', error);
+            req.flash('error', 'Failed to load orders');
+            res.redirect('/');
+        }
+    },
+
+    /**
+     * POST /admin/orders/update - Update order status (Admin)
+     */
+    updateOrderStatus: async (req, res) => {
+        try {
+            const { txnRef, status } = req.body;
+            await Transaction.updateStatus(txnRef, status);
+            req.flash('success', `Order ${txnRef} updated to ${status}`);
+            res.redirect('/admin/orders');
+        } catch (error) {
+            console.error('Error updating order status:', error);
+            req.flash('error', 'Failed to update order status');
+            res.redirect('/admin/orders');
+        }
+    },
+
+    /**
      * GET /addProduct - Display add product form (Admin)
      */
     getAddProductPage: (req, res) => {

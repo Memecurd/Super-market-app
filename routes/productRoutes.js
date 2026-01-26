@@ -27,6 +27,20 @@ router.get('/inventory',
     productController.getInventory
 );
 
+// GET /admin/orders - Display all orders
+router.get('/admin/orders', 
+    checkAuthenticated, 
+    checkAdmin, 
+    productController.getAdminOrders
+);
+
+// POST /admin/orders/update - Update order status
+router.post('/admin/orders/update', 
+    checkAuthenticated, 
+    checkAdmin, 
+    productController.updateOrderStatus
+);
+
 // GET /addProduct - Display add product form
 router.get('/addProduct', 
     checkAuthenticated, 

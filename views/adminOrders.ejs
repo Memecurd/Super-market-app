@@ -1,0 +1,127 @@
+<%- include('partials/header') %>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0 fw-bold text-danger">
+            <i class="bi bi-shield-lock me-2"></i>Admin: Manage Orders
+        </h2>
+        <div>
+             <a href="/inventory" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-box-seam me-2"></i>Inventory
+            </a>
+            <a href="/shopping" class="btn btn-outline-primary">
+                <i class="bi bi-shop me-2"></i>Store
+            </a>
+        </div>
+    </div>
+
+    <% if (success && success.length > 0) { %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <%= success %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+    
+    <% if (error && error.length > 0) { %>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    <% } %>
+
+    <% if (orders.length === 0) { %>
+        <div class="alert alert-info">No orders found in the system.</div>
+    <% } else { %>
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order Ref</th>
+                            <th>User</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Payment</th>
+                            <th>Status / Action</th>
+                            <th class="text-end">Invoice</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td class="fw-bold text-primary small">#<%= order.txn_ref %></td>
+                                <td>
+                                    <div class="fw-bold"><%= order.username || 'Unknown' %></div>
+                                    <div class="small text-muted"><%= order.email %></div>
+                                </td>
+                                <td class="small"><%= new Date(order.created_at).toLocaleString('en-SG', { dateStyle: 'short', timeStyle: 'short' }) %></td>
+                                <td class="fw-bold">$<%= parseFloat(order.amount).toFixed(2) %></td>
+                                <td>
+                                    <span class="badge bg-secondary"><%= order.provider %></span>
+                                </td>
+                                <td>
+                                    <form action="/admin/orders/update" method="POST" class="d-flex align-items-center">
+                                        <input type="hidden" name="txnRef" value="<%= order.txn_ref %>">
+                                        <select name="status" class="form-select form-select-sm me-2" style="width: 140px; font-size: 0.85rem;" 
+                                            onchange="updateSelectColor(this)">
+                                            <option value="PENDING" <%= order.status === 'PENDING' ? 'selected' : '' %>>PENDING</option>
+                                            <option value="PAID" <%= order.status === 'PAID' ? 'selected' : '' %>>PAID</option>
+                                            <option value="PACKED" <%= order.status === 'PACKED' ? 'selected' : '' %>>PACKED</option>
+                                            <option value="IN_TRANSIT" <%= order.status === 'IN_TRANSIT' ? 'selected' : '' %>>IN TRANSIT</option>
+                                            <option value="DELIVERED" <%= order.status === 'DELIVERED' ? 'selected' : '' %>>DELIVERED</option>
+                                            <option value="FAILED" <%= order.status === 'FAILED' ? 'selected' : '' %>>FAILED</option>
+                                            <option value="TIMEOUT" <%= order.status === 'TIMEOUT' ? 'selected' : '' %>>TIMEOUT</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <a href="/orders/invoice/<%= order.id %>" class="btn btn-sm btn-outline-dark" target="_blank">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<script>
+    function updateSelectColor(select) {
+        select.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'bg-info', 'bg-primary', 'bg-secondary', 'bg-dark', 'text-white', 'text-dark');
+        
+        switch(select.value) {
+            case 'PAID':
+                select.classList.add('bg-success', 'text-white');
+                break;
+            case 'PENDING':
+                select.classList.add('bg-warning', 'text-dark');
+                break;
+            case 'PACKED':
+                select.classList.add('bg-info', 'text-dark');
+                break;
+            case 'IN_TRANSIT':
+                select.classList.add('bg-primary', 'text-white');
+                break;
+            case 'DELIVERED':
+                select.classList.add('bg-dark', 'text-white');
+                break;
+            case 'FAILED':
+                select.classList.add('bg-danger', 'text-white');
+                break;
+            case 'TIMEOUT':
+                select.classList.add('bg-secondary', 'text-white');
+                break;
+        }
+    }
+
+    // Initialize select colors on load
+    document.querySelectorAll('select[name="status"]').forEach(select => {
+        updateSelectColor(select);
+    });
+</script>
+
+<%- include('partials/footer') %>

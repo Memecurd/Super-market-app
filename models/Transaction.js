@@ -49,6 +49,24 @@ const Transaction = {
     },
 
     /**
+     * Get all transactions with user details (For Admin)
+     */
+    async getAllWithUsers() {
+        try {
+            const [rows] = await promisePool.query(`
+                SELECT t.*, u.username, u.email 
+                FROM transactions t 
+                LEFT JOIN users u ON t.user_id = u.id 
+                ORDER BY t.created_at DESC
+            `);
+            return rows;
+        } catch (error) {
+            console.error('Error in Transaction.getAllWithUsers:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Update transaction status
      * @param {string} txnRef 
      * @param {string} status - 'PENDING', 'PAID', 'FAILED', 'TIMEOUT'

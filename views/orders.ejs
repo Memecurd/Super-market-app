@@ -40,7 +40,23 @@
                                 <td><%= new Date(order.created_at).toLocaleString('en-SG', { dateStyle: 'medium', timeStyle: 'short' }) %></td>
                                 <td class="fw-bold">$<%= parseFloat(order.amount).toFixed(2) %></td>
                                 <td>
-                                    <span class="badge bg-success"><%= order.status %></span>
+                                    <% 
+                                        let badgeClass = 'bg-secondary';
+                                        let icon = '';
+                                        switch(order.status) {
+                                            case 'PAID': badgeClass = 'bg-success'; icon='bi-check-circle'; break;
+                                            case 'PENDING': badgeClass = 'bg-warning text-dark'; icon='bi-hourglass-split'; break;
+                                            case 'PACKED': badgeClass = 'bg-info text-dark'; icon='bi-box-seam'; break;
+                                            case 'IN_TRANSIT': badgeClass = 'bg-primary'; icon='bi-truck'; break;
+                                            case 'DELIVERED': badgeClass = 'bg-dark'; icon='bi-house-check'; break;
+                                            case 'FAILED': badgeClass = 'bg-danger'; icon='bi-x-circle'; break;
+                                            case 'TIMEOUT': badgeClass = 'bg-secondary'; icon='bi-clock-history'; break;
+                                        }
+                                    %>
+                                    <span class="badge <%= badgeClass %>">
+                                        <% if(icon) { %><i class="bi <%= icon %> me-1"></i><% } %>
+                                        <%= order.status.replace('_', ' ') %>
+                                    </span>
                                 </td>
                                 <td>
                                     <span class="badge bg-secondary"><%= order.provider %></span>
