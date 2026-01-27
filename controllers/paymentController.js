@@ -11,6 +11,8 @@ const qrcode = require('qrcode');
 const Product = require('../models/Product');
 const Transaction = require('../models/Transaction');
 const productController = require('./productController');
+const fs = require('fs');
+const path = require('path');
 
 // ===========================================
 // PAYPAL CONFIGURATION
@@ -179,24 +181,27 @@ const paymentController = {
             const total = await paymentController.calculateServerTotal(cart);
 
             console.log('NETS: Generating QR for Amount:', total);
-            
-            // Clean the NETS_TXN_ID (remove potential whitespace)
+
+            // Revert to Static NETS_TXN_ID (Terminal ID)
+            // Random ID caused Error 500 (Invalid Terminal). Error 68 is likely transient or duplicate request.
             const netsTxnId = process.env.NETS_TXN_ID ? process.env.NETS_TXN_ID.trim() : '';
-            console.log(`NETS: Using Terminal ID (txn_id): '${netsTxnId}' (Length: ${netsTxnId.length})`);
+            console.log(`NETS: Using Terminal ID (txn_id): '${netsTxnId}'`);
 
             // 2. Call NETS Request API
             const url = `${process.env.NETS_BASE_URL}/api/v1/common/payments/nets-qr/request`;
 
-            // Ensure amount is formatted strictly as string with 2 decimal places (e.g., "10.00")
-            const formattedTotal = total.toFixed(2);
-
+            // Ensure amount is formatted as Number (to prevent 'Amount not defined' error on App)
             const payload = {
-                txn_id: netsTxnId, // Terminal ID / Station ID
-                amt_in_dollars: formattedTotal
+                txn_id: netsTxnId, // Terminal ID
+                amt_in_dollars: parseFloat(total.toFixed(2))
             };
 
-            // Log the full payload for debugging
+            // Log the full payload for debugging (Console + File)
             console.log('NETS Request Payload:', JSON.stringify(payload, null, 2));
+
+            const debugLogPath = path.join(__dirname, '../nets_debug.log');
+            // Log Request
+            fs.appendFileSync(debugLogPath, `[${new Date().toISOString()}] REQUEST:\n${JSON.stringify(payload, null, 2)}\n\n`);
 
             const headers = {
                 'Content-Type': 'application/json',
@@ -212,6 +217,10 @@ const paymentController = {
             } catch (apiError) {
                 console.error('NETS API Request Failed:', apiError.response?.status);
 
+                const debugLogPath = path.join(__dirname, '../nets_debug.log');
+                const logEntry = `[${new Date().toISOString()}] API ERROR:\nStatus: ${apiError.response?.status}\nData: ${JSON.stringify(apiError.response?.data, null, 2)}\n\n`;
+                fs.appendFileSync(debugLogPath, logEntry);
+
                 return res.status(400).json({
                     error: 'NETS QR request failed',
                     details: apiError.response?.data
@@ -219,6 +228,10 @@ const paymentController = {
             }
 
             let netsBody = response.data;
+
+            // LOG SUCCESS RESPONSE
+            const logEntrySuccess = `[${new Date().toISOString()}] SUCCESS RESPONSE:\n${JSON.stringify(netsBody, null, 2)}\n\n`;
+            fs.appendFileSync(debugLogPath, logEntrySuccess);
 
             // Handle Nested Structure (Sandbox specific or wrapper)
             // Some APIs return { status, result: { data: {...} } }
@@ -235,6 +248,12 @@ const paymentController = {
 
             if (netsBody.response_code !== '00') {
                 console.error('NETS API Error:', netsBody);
+
+                // Write to debug log file
+                const debugLogPath = path.join(__dirname, '../nets_debug.log');
+                const logEntry = `[${new Date().toISOString()}] Error: ${JSON.stringify(netsBody)}\nPayload: ${JSON.stringify(payload)}\n\n`;
+                fs.appendFileSync(debugLogPath, logEntry);
+
                 return res.status(400).json({
                     error: 'NETS QR request failed',
                     details: netsBody
@@ -267,7 +286,19 @@ const paymentController = {
 
         } catch (error) {
             console.error('NETS QR Gen Error:', error.message);
-            res.status(500).json({ error: 'Failed to generate NETS QR' });
+
+            // Write to debug log file
+            const debugLogPath = path.join(__dirname, '../nets_debug.log');
+
+            let errorData = error.message;
+            if (error.response && error.response.data) {
+                errorData = JSON.stringify(error.response.data, null, 2);
+            }
+
+            const logEntry = `[${new Date().toISOString()}] CATCH ERROR:\nStatus: ${error.response?.status}\nData: ${errorData}\n\n`;
+            fs.appendFileSync(debugLogPath, logEntry);
+
+            res.status(500).json({ error: 'Failed to generate NETS QR', details: errorData });
         }
     },
 
