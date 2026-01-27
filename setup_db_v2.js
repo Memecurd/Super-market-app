@@ -29,7 +29,7 @@ async function updateTransactionsTable() {
                 txn_ref VARCHAR(255) UNIQUE NOT NULL,
                 provider_ref VARCHAR(255),
                 user_id INT,
-                provider ENUM('PAYPAL', 'NETS') NOT NULL,
+                provider ENUM('PAYPAL', 'NETS', 'METAMASK') NOT NULL,
                 amount DECIMAL(10, 2) NOT NULL,
                 status ENUM('PENDING', 'PAID', 'FAILED', 'TIMEOUT') DEFAULT 'PENDING',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -37,11 +37,11 @@ async function updateTransactionsTable() {
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
         `;
-        
+
         await promisePool.query(createTransactionQuery);
 
         console.log('⚠ Creating order_items table...');
-        
+
         const createOrderItemsQuery = `
             CREATE TABLE IF NOT EXISTS order_items (
                 id INT AUTO_INCREMENT PRIMARY KEY,

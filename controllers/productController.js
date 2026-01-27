@@ -382,7 +382,8 @@ const productController = {
                 title: 'Shopping Cart',
                 cart,
                 total,
-                paypalClientId: process.env.PAYPAL_CLIENT_ID
+                paypalClientId: process.env.PAYPAL_CLIENT_ID,
+                metamaskAddress: process.env.METAMASK_WALLET_ADDRESS
             });
         } catch (error) {
             console.error('Error loading cart:', error);

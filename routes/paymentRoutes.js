@@ -21,6 +21,12 @@ router.post('/api/nets/qr', checkAuthenticated, paymentController.generateNetsQr
 router.get('/sse/payment-status/:txnRef', paymentController.paymentStatusSSE);
 
 // ===========================================
+// METAMASK ENDPOINTS
+// ===========================================
+router.post('/api/metamask/complete', checkAuthenticated, paymentController.completeMetaMaskPayment);
+
+
+// ===========================================
 // PAYMENT RESULT PAGES
 // ===========================================
 router.get('/payment/success', checkAuthenticated, (req, res) => {

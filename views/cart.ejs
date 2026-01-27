@@ -156,6 +156,22 @@
                         </div>
                     </div>
 
+                    <!-- MetaMask Checkout -->
+                    <div class="card shadow-sm border-warning mb-3" style="border-color: #f6851b !important;">
+                        <div class="card-header text-white" style="background-color: #f6851b;">
+                            <h5 class="mb-0">
+                                <i class="bi bi-wallet2 me-2"></i>Pay with MetaMask
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-warning w-100 py-2 text-white" id="btnMetaMask"
+                                style="background-color: #e2761b; border-color: #e2761b;">
+                                <strong>Connect & Pay with ETH</strong>
+                            </button>
+                            <div id="metaMaskStatus" class="mt-2 text-center small text-muted d-none"></div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             <% } %>
@@ -373,5 +389,121 @@
                                 }
                             });
 
+                        </script>
+                        <!-- MetaMask Script -->
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.2/ethers.umd.min.js"></script>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', () => {
+                                const btnMetaMask = document.getElementById('btnMetaMask');
+                                const statusDiv = document.getElementById('metaMaskStatus');
+
+                                if (btnMetaMask) {
+                                    btnMetaMask.addEventListener('click', async () => {
+                                        if (typeof window.ethereum === 'undefined') {
+                                            alert('MetaMask is not installed! Please install it to proceed.');
+                                            return;
+                                        }
+
+                                        btnMetaMask.disabled = true;
+                                        btnMetaMask.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+                                        statusDiv.classList.remove('d-none');
+                                        statusDiv.textContent = 'Connecting to MetaMask...';
+
+                                        try {
+                                            const provider = new ethers.BrowserProvider(window.ethereum);
+
+                                            // Force Network Switch to Sepolia
+                                            // Backend verifies on Sepolia, so frontend must match.
+                                            const network = await provider.getNetwork();
+                                            if (network.chainId !== 11155111n) { // Sepolia Chain ID
+                                                try {
+                                                    await window.ethereum.request({
+                                                        method: 'wallet_switchEthereumChain',
+                                                        params: [{ chainId: '0xaa36a7' }],
+                                                    });
+                                                } catch (switchError) {
+                                                    // This error code indicates that the chain has not been added to MetaMask.
+                                                    if (switchError.code === 4902) {
+                                                        await window.ethereum.request({
+                                                            method: 'wallet_addEthereumChain',
+                                                            params: [
+                                                                {
+                                                                    chainId: '0xaa36a7',
+                                                                    chainName: 'Sepolia Test Network',
+                                                                    rpcUrls: ['https://sepolia.infura.io/v3/'],
+                                                                    nativeCurrency: {
+                                                                        name: 'SepoliaETH',
+                                                                        symbol: 'ETH',
+                                                                        decimals: 18,
+                                                                    },
+                                                                    blockExplorerUrls: ['https://sepolia.etherscan.io'],
+                                                                },
+                                                            ],
+                                                        });
+                                                    } else {
+                                                        throw switchError;
+                                                    }
+                                                }
+                                                // Re-initialize provider after switch
+                                                // provider = new ethers.BrowserProvider(window.ethereum); // Provider usually handles it, but let's proceed
+                                            }
+
+                                            await provider.send("eth_requestAccounts", []);
+                                            const signer = await provider.getSigner();
+                                            const userAddress = await signer.getAddress();
+
+                                            statusDiv.textContent = 'Preparing transaction...';
+
+                                            // Mock Conversion: 1 SGD = 0.001 ETH
+                                            const totalSGD = parseFloat('<%= total %>');
+                                            const exchangeRate = 0.0007; // Approx 1 ETH = 4350 SGD
+                                            const ethAmountStr = (totalSGD * exchangeRate).toFixed(4); // Keep 4 decimals
+                                            const amountInWei = ethers.parseEther(ethAmountStr);
+
+                                            const merchantAddress = '<%= metamaskAddress %>';
+                                            if (!merchantAddress) throw new Error('Merchant address not configured');
+
+                                            // Send Tx
+                                            statusDiv.textContent = `Sending ${ethAmountStr} ETH... Please confirm in MetaMask.`;
+
+                                            const tx = await signer.sendTransaction({
+                                                to: merchantAddress,
+                                                value: amountInWei
+                                            });
+
+                                            statusDiv.textContent = 'Transaction sent! Waiting for confirmation...';
+                                            await tx.wait();
+
+                                            statusDiv.textContent = 'Verifying payment...';
+
+                                            // Notify Backend
+                                            const response = await fetch('/api/metamask/complete', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({
+                                                    txHash: tx.hash,
+                                                    userAddress: userAddress
+                                                })
+                                            });
+
+                                            const result = await response.json();
+
+                                            if (result.status === 'COMPLETED') {
+                                                window.location.href = '/payment/success';
+                                            } else {
+                                                throw new Error(result.error || 'Verification failed');
+                                            }
+
+                                        } catch (error) {
+                                            console.error('MetaMask Error:', error);
+                                            alert('Payment failed: ' + (error.reason || error.message));
+                                            btnMetaMask.disabled = false;
+                                            btnMetaMask.innerHTML = '<strong>Connect & Pay with ETH</strong>';
+                                            statusDiv.textContent = '';
+                                            statusDiv.classList.add('d-none');
+                                        }
+                                    });
+                                }
+                            });
                         </script>
                         <% } %>

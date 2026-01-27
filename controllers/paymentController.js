@@ -8,6 +8,8 @@
 const paypal = require('@paypal/checkout-server-sdk');
 const axios = require('axios');
 const qrcode = require('qrcode');
+
+const ethers = require('ethers');
 const Product = require('../models/Product');
 const Transaction = require('../models/Transaction');
 const productController = require('./productController');
@@ -407,6 +409,77 @@ const paymentController = {
         req.on('close', () => {
             clearInterval(intervalId);
         });
+    },
+
+    // ===========================================
+    // METAMASK FLOW
+    // ===========================================
+
+    /**
+     * POST /api/metamask/complete
+     * Verify MetaMask Transaction
+     */
+    completeMetaMaskPayment: async (req, res) => {
+        try {
+            const { txHash, userAddress } = req.body;
+            const user = req.session.user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const cart = req.session.cart || [];
+            if (cart.length === 0) return res.status(400).json({ error: 'Cart is empty' });
+
+            // 1. Idempotency Check
+            const existingTxn = await Transaction.findByRef(txHash);
+            if (existingTxn) {
+                return res.status(400).json({ error: 'Transaction already processed' });
+            }
+
+            // 2. Connect to Ethereum Provider
+            // Use a default provider if env var is missing or generic
+            const providerUrl = process.env.ETH_RPC_URL || 'https://rpc.sepolia.org';
+            const provider = new ethers.JsonRpcProvider(providerUrl);
+
+            // Wait for tx to be mined if looking it up immediately, though usually frontend waits
+            const tx = await provider.getTransaction(txHash);
+            const receipt = await provider.getTransactionReceipt(txHash);
+
+            if (!tx || !receipt) {
+                return res.status(404).json({ error: 'Transaction not found on chain' });
+            }
+
+            // 3. Verify Transaction
+            if (receipt.status !== 1) {
+                return res.status(400).json({ error: 'Transaction failed on chain' });
+            }
+
+            const merchantAddress = process.env.METAMASK_WALLET_ADDRESS;
+            if (tx.to.toLowerCase() !== merchantAddress.toLowerCase()) {
+                return res.status(400).json({ error: 'Transaction sent to wrong address' });
+            }
+
+            // Calculate expected total (SGD)
+            const totalSGD = await paymentController.calculateServerTotal(cart);
+            console.log(`MetaMask: Payment verified for ${totalSGD} SGD. Tx Value: ${ethers.formatEther(tx.value)} ETH`);
+
+            // 4. Record Transaction
+            const result = await Transaction.create({
+                txn_ref: txHash,
+                provider_ref: txHash,
+                user_id: user.id,
+                provider: 'METAMASK',
+                amount: totalSGD,
+                status: 'PAID'
+            });
+
+            // 5. Finalize Order
+            await productController.finalizeOrder(req, cart, result.insertId);
+
+            res.json({ status: 'COMPLETED' });
+
+        } catch (error) {
+            console.error('MetaMask Verification Error:', error);
+            res.status(500).json({ error: 'Failed to verify payment: ' + (error.reason || error.message) });
+        }
     }
 };
 
