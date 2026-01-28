@@ -456,7 +456,7 @@
 
                                             // Mock Conversion: 1 SGD = 0.001 ETH
                                             const totalSGD = parseFloat('<%= total %>');
-                                            const exchangeRate = 0.0007; // Approx 1 ETH = 4350 SGD
+                                            const exchangeRate = 0.0003; // Approx 1 ETH = 4350 SGD
                                             const ethAmountStr = (totalSGD * exchangeRate).toFixed(4); // Keep 4 decimals
                                             const amountInWei = ethers.parseEther(ethAmountStr);
 
